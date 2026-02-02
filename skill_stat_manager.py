@@ -115,7 +115,7 @@ def get_stats_for_class(clas, level=1):
     return final
 
 
-def setup_char_value(target_name=None):
+def setup_char_value(characters, target_name=None):
 
     # Stores manual stat edits
     added_dic = {
@@ -132,9 +132,7 @@ def setup_char_value(target_name=None):
     #While editing
     while True:
 
-        # get characters dict (import here to avoid circular import at module load)
-        from char_manager import char_return
-        char = char_return()
+        char = characters
 
         if target_name:
             name = target_name

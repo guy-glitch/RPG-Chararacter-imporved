@@ -49,7 +49,7 @@ race_options = ("Human", "Dragonborn", "Halfling", "Elf", "Ogre", "Dwarf", "Tief
 class_options = ("Black Mage", "Warrior", "Thief", "White Mage")
 
 # return characters function,takes in character dictionary:
-def char_return():
+def char_return(characters):
     # returns character dictionary for easy access
     return characters
 
@@ -107,8 +107,8 @@ def create_character(character_dictionary, races, classes):
 def edit_character(character_dictionary):
     while True:
         # User chooses character to edit with Warrens search function
-        character = char_search()
-        char_display(character)
+        character = char_search(character_dictionary)
+        char_display(character, character_dictionary)
         # ask what they want to edit (inventory, skills, attributes, name)
         to_edit = input("What do you want to edit?\n1. Inventory\n2. Skills\n3. Atributtes\n")
         if to_edit == "1":
@@ -125,7 +125,7 @@ def edit_character(character_dictionary):
                 character_dictionary[character].setdefault('skills', set()).discard(rem)
         elif to_edit == "3":
             # edit attributes for that character
-            character_dictionary = setup_char_value(target_name=character)
+            character_dictionary = setup_char_value(character_dictionary, target_name=character)
         else:
             print("Not an option.")
 

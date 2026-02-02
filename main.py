@@ -48,15 +48,16 @@ characters = {
 import sys
 #Define main
 def main():
+    characters_local = characters
     print("Welcome to the RPG Character Manager. You can create, edit, and search for characters here.")
     while True:
         choice = input("What would you like to do?\n1.Create a new character\n2.Edit an already made character\n3.Search through characters\n4.Exit\n")
         if choice == '1':
-            characters.update(create_character(characters, race_options, class_options))
+            characters_local = create_character(characters_local, race_options, class_options)
         elif choice == '2':
-            characters.update(edit_character(characters))
+            characters_local = edit_character(characters_local)
         elif choice == '3':  
-            char_search()
+            char_search(characters_local)
         if choice == '4':
             print("Goodbye")
             sys.exit()
@@ -64,8 +65,9 @@ def main():
             print("Invalid choice, try again")
 
 #define a function to return characters
-def char_return():
+def char_return(characters):
     return characters
+
 #Run Main
 if __name__ == "__main__":
     main()
