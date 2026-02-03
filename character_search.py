@@ -52,14 +52,14 @@ def check_char(characters):
 def char_search(characters):
     #call check_char with characters argunment, & search value
     check = check_char(characters)
-    char_display(check, characters)
+    dict_display(check, characters)
     #ask if they want to exit
     exit = input("Do you want to exit the searching? do not answer until you are done looking over the character. y/n ").strip().lower()
     #if exit is no
 
     if exit == "n":
         #continue
-        check_char(characters)
+        char_search(characters)
 
     #else   
     else:
@@ -67,41 +67,48 @@ def char_search(characters):
         return
 
 #character display function
-def char_display(char_key, characters):
+def _format_item_display(item):
+    # item can be dict with 'name' and 'stats', a string, or other dict/list
+    if isinstance(item, dict) and 'name' in item and 'stats' in item:
+        stats = ", ".join(f"{k}: {v}" for k, v in item['stats'].items())
+        return f"{item['name']} — {stats}" if stats else f"{item['name']}"
+    if isinstance(item, dict):
+        # fallback format
+        return ", ".join(f"{k}: {v}" for k, v in item.items())
+    return str(item)
 
-    race = characters[char_key]["race"]
-    print(f"race: {race}")
 
-    race = characters[char_key]["race"]
-    print(f"race: {race}\n")
-    classs = characters[char_key]["class"]
-    print(f"class: {classs}\n")
-    level = characters[char_key]["level"]
-    print(f"level: {level}\n")
-    mp = characters[char_key]["atributtes"]["MP"]
-    print(f"MP: {mp}\n")
-    hp = characters[char_key]["atributtes"]["HP"]
-    print(f"HP: {hp}\n")
-    str = characters[char_key]["atributtes"]["Str"]
-    print(f"Str: {str}\n")
-    atk = characters[char_key]["atributtes"]["Atk"]
-    print(f"Atk: {atk}\n")
-    deff = characters[char_key]["atributtes"]["Def"]
-    print(f"Def: {deff}")
-    mag = characters[char_key]["atributtes"]["Mag"]
-    print(f"Mag: {mag}\n")
-    spr = characters[char_key]["atributtes"]["Spr"]
-    print(f"Spr: {spr}\n")
-    acc = characters[char_key]["atributtes"]["Acc"]
-    print(f"Acc: {acc} \n")
-    spd = characters[char_key]["atributtes"]["Spd"]
-    print(f"Spd: {spd}\n")
-    evs = characters[char_key]["atributtes"]["Evs"]
-    print(f"Evs: {evs}\n")
-    skills = characters[char_key]["skills"]
-    print(f"Skills: {skills}\n")
-    inventory = characters[char_key]["inventory"]
-    print(f"Inventory: {inventory}\n")
+def dict_display(key, dic_name):
+    # print the dictionary key (e.g., character name)
+    print(f"{key}:")
+    dic = dic_name[key]
+    for i in dic:
+        if isinstance(dic[i], dict):
+            print(f"{i.capitalize()}:")
+            for j in dic[i]:
+                value = dic[i][j]
+                # Inventory-style entries: item dict, list, or nested dict (attributes)
+                if isinstance(value, dict) and 'name' in value and 'stats' in value:
+                    print(f"  {j.capitalize()}: {_format_item_display(value)}")
+                elif isinstance(value, list):
+                    # list of strings or list of item-dicts
+                    if value and isinstance(value[0], dict) and 'name' in value[0]:
+                        print(f"  {j.capitalize()}: {', '.join(_format_item_display(v) for v in value)}")
+                    else:
+                        print(f"  {j.capitalize()}: {', '.join(str(v) for v in value) if value else 'None'}")
+                elif isinstance(value, dict):
+                    # nested attributes dictionary
+                    print(f"  {j.capitalize()}:")
+                    for k in value:
+                        print(f"    {k.capitalize()}: {value[k]}")
+                else:
+                    print(f"  {j.capitalize()}: {value}")
+        elif isinstance(dic[i], list):
+            print(f"{i.capitalize()}: {', '.join(str(x) for x in dic[i]) if dic[i] else 'None'}")
+        elif isinstance(dic[i], set):
+            print(f"{i.capitalize()}: {', '.join(dic[i]) if dic[i] else 'None'}")
+        else:
+            print(f"{i.capitalize()}: {dic[i]}")
 
 def key_from_value(characters, key_desired):
     for key, value in characters.items():

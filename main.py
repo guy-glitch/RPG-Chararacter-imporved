@@ -58,7 +58,7 @@ def main():
             characters_local = edit_character(characters_local)
         elif choice == '3':  
             char_search(characters_local)
-        if choice == '4':
+        elif choice == '4':
             print("Goodbye")
             sys.exit()
         else:

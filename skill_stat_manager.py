@@ -115,6 +115,26 @@ def get_stats_for_class(clas, level=1):
     return final
 
 
+def make_stat_modifier(bonuses):
+    """Closure factory that returns a function applying `bonuses` to a stats dict.
+
+    The returned function takes a stats dict and returns a new dict where each stat
+    in `bonuses` is added to the corresponding value (missing stats are treated as 0).
+    The bonuses are captured (copied) when the closure is created so later changes to
+    the original `bonuses` object do not affect the modifier.
+    """
+    # copy to freeze captured values
+    captured = dict(bonuses)
+
+    def apply_modifier(stats):
+        new = dict(stats)
+        for k, v in captured.items():
+            new[k] = new.get(k, 0) + v
+        return new
+
+    return apply_modifier
+
+
 def setup_char_value(characters, target_name=None):
 
     # Stores manual stat edits
@@ -217,19 +237,17 @@ def setup_char_value(characters, target_name=None):
         elif choice == "3":
             edit_attributes()
 
-        # Combine base + level + added stats
-        final_stats = {}
+        # Combine base + level + added stats using modifiers (demonstrates closure usage)
         base = CHAR_TABLE[clas]['Stats']
+        # make modifiers (closures) that apply level and manual additions
+        level_modifier = make_stat_modifier(level_dic['Stats'])
+        manual_modifier = make_stat_modifier(added_dic['Stats'])
 
-        for stat in base:
-            if stat == "Lvl":
-                final_stats['Lvl'] = base['Lvl'] + added_dic['Stats']['Lvl']
-            else:
-                final_stats[stat] = (
-                    base[stat] +
-                    level_dic['Stats'][stat] +
-                    added_dic['Stats'][stat]
-                )
+        # apply modifiers sequentially and handle 'Lvl' specially
+        intermediate = level_modifier(base)
+        final_stats = manual_modifier(intermediate)
+        # ensure Lvl reflects manual added level (added_dic stores Lvl diff)
+        final_stats['Lvl'] = base['Lvl'] + added_dic['Stats']['Lvl']
 
         # Save final stats back to character (use existing 'atributtes' key used elsewhere)
         char[name]['atributtes'] = final_stats

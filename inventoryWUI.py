@@ -247,12 +247,139 @@ items = {
     }
 }
 
-def new_inven(char_class,char_dict,char_name):
-    num_map = {
-        '1':'One',
-        '2':'Two',
-        '3':'Three',
-        '4':'Four'    }
+def _format_stats(stats):
+    if not stats:
+        return ""
+    return ", ".join(f"{k}: {v}" for k, v in stats.items())
+
+
+def _format_item_line(name, stats):
+    formatted = _format_stats(stats)
+    return f"{name} — {formatted}" if formatted else name
+
+
+def _print_menu(items_dict):
+    for idx, name in enumerate(items_dict.keys(), start=1):
+        print(f"{idx}. {_format_item_line(name, items_dict[name])}")
+
+
+def _choose_item_from(items_dict, prompt="Choose an item (number, 's' to search, 'c' to cancel, or exact name):\n"):
+    names = list(items_dict.keys())
+    if not names:
+        print("No items available to choose from.")
+        return None
+    attempts = 0
+    max_attempts = 6
+    while attempts < max_attempts:
+        _print_menu(items_dict)
+        choice = input(prompt).strip()
+        if not choice:
+            print("Enter a number, 's' to search, 'c' to cancel, or exact name.")
+            attempts += 1
+            continue
+        if choice.lower() == 'c':
+            return None
+        # number selection
+        if choice.isdigit():
+            idx = int(choice) - 1
+            if 0 <= idx < len(names):
+                return names[idx]
+            print("That number is not an option.")
+            attempts += 1
+            continue
+        # search helper
+        if choice.lower() == 's':
+            term = input("Search term:\n").strip().lower()
+            matches = [n for n in names if term in n.lower()]
+            if not matches:
+                print("No matches.")
+                attempts += 1
+                continue
+            for i, nm in enumerate(matches, 1):
+                print(f"{i}. {_format_item_line(nm, items_dict[nm])}")
+            sel = input("Enter number to choose, 'c' to cancel, or press Enter to cancel:\n").strip()
+            if sel.lower() == 'c' or sel == '':
+                attempts += 1
+                continue
+            if sel.isdigit() and 1 <= int(sel) <= len(matches):
+                return matches[int(sel) - 1]
+            print("Invalid selection.")
+            attempts += 1
+            continue
+        # exact name (case insensitive)
+        for nm in names:
+            if choice.lower() == nm.lower():
+                return nm
+        print("Invalid choice. Enter a number, 's' to search, 'c' to cancel, or exact name.")
+        attempts += 1
+    print("Too many invalid attempts. Cancelled.")
+    return None
+
+
+_num_to_word = {1: 'one', 2: 'two', 3: 'three', 4: 'four'}
+
+
+def find_item_by_name(name):
+    """Return {'name', 'stats'} for a matching item name (case-insensitive), or None if not found."""
+    if not name or not isinstance(name, str):
+        return None
+    target = name.strip().lower()
+    # check weapons and armor per class
+    for cls in ('Warrior', 'Thief', 'Mage'):
+        for k, v in items[cls]['Weapons'].items():
+            if k.lower() == target:
+                return {'name': k, 'stats': v}
+        for k, v in items[cls]['Armor'].items():
+            if k.lower() == target:
+                return {'name': k, 'stats': v}
+    # equipment categories
+    for cat in ('One', 'Two', 'Three'):
+        for k, v in items['Equipment'][cat].items():
+            if k.lower() == target:
+                return {'name': k, 'stats': v}
+    return None
+
+
+def migrate_inventories(characters):
+    """Migrate inventory entries stored as lists/strings into structured format {'name','stats'}.
+    Unknown items are preserved as {'name': <name>, 'stats': {}} so they still print nicely.
+    """
+    changed = 0
+    for cname, cdata in characters.items():
+        inv = cdata.setdefault('inventory', {})
+        for slot, val in list(inv.items()):
+            # skip already structured items
+            if isinstance(val, dict) and 'name' in val and 'stats' in val:
+                continue
+            # skip explicit None
+            if val is None:
+                continue
+            item_name = None
+            if isinstance(val, (list, tuple)) and val:
+                # take first element
+                item_name = val[0]
+            elif isinstance(val, str):
+                item_name = val
+            else:
+                # unexpected structure: skip
+                continue
+            if not item_name:
+                inv[slot] = None
+                changed += 1
+                continue
+            found = find_item_by_name(item_name)
+            if found:
+                inv[slot] = {'name': found['name'], 'stats': found['stats']}
+            else:
+                # preserve unknown item name with empty stats so it prints
+                inv[slot] = {'name': item_name, 'stats': {}}
+            changed += 1
+    if changed:
+        print(f"Migrated {changed} inventory entries to structured format.")
+    return characters
+
+
+def new_inven(char_class, char_dict, char_name):
     # Normalize incoming class name to our item categories
     if char_class in ("Black Mage", "White Mage"):
         internal_class = 'Mage'
@@ -261,79 +388,159 @@ def new_inven(char_class,char_dict,char_name):
     else:
         internal_class = 'Warrior'
 
-    print("You will now construct your inventory")
-    print("Choose your weapon (Type the name exactly as shown)")
-    #Have several while loops and for loops taking care of the items
-    x = 1
-    for item in items[internal_class]['Weapons'].keys():
-        print(item)
-        print(items[internal_class]["Weapons"][item])
+    print("\n--- Inventory Setup ---\n")
+
+    # Weapon
+    print("Choose your weapon:")
     while True:
-        choice = input("Choose one\n")
-        if choice in items[internal_class]['Weapons'].keys():
-            char_dict.setdefault(char_name, {})
-            char_dict[char_name].setdefault('inventory', {})
-            char_dict[char_name]['inventory']['weapon'] = [choice]
-            break
-        else:
-            print("Invalid choice")
-    print("You will now choose your armor (Type the name exactly)")
-    for item in items[internal_class]['Armor'].keys():
-        print(item)
-        print(items[internal_class]["Armor"][item])
+        weapon = _choose_item_from(items[internal_class]['Weapons'], "Choose a weapon (number, 's' to search, 'c' to cancel, or exact name):\n")
+        if weapon is None:
+            again = input("No selection made. Retry choosing weapon? (y/n)\n").strip().lower()
+            if again == 'y':
+                continue
+            else:
+                print("Weapon selection skipped.")
+                char_dict.setdefault(char_name, {}).setdefault('inventory', {})['weapon'] = None
+                break
+        # valid selection
+        char_dict.setdefault(char_name, {}).setdefault('inventory', {})['weapon'] = {'name': weapon, 'stats': items[internal_class]['Weapons'][weapon]}
+        print(f"Selected: {_format_item_line(weapon, items[internal_class]['Weapons'][weapon])}\n")
+        break
+
+    # Armor
+    print("Choose your armor:")
     while True:
-        choice = input("Choose one\n")
-        if choice in items[internal_class]["Armor"].keys():
-            char_dict[char_name]['inventory']['armor'] = [choice]
+        armor = _choose_item_from(items[internal_class]['Armor'], "Choose armor (number, 's' to search, 'c' to cancel, or exact name):\n")
+        if armor is None:
+            again = input("No selection made. Retry choosing armor? (y/n)\n").strip().lower()
+            if again == 'y':
+                continue
+            else:
+                print("Armor selection skipped.")
+                char_dict[char_name]['inventory']['armor'] = None
+                break
+        char_dict[char_name]['inventory']['armor'] = {'name': armor, 'stats': items[internal_class]['Armor'][armor]}
+        print(f"Selected: {_format_item_line(armor, items[internal_class]['Armor'][armor])}\n")
+        break
+
+    # Equipment - 4 slots
+    for slot_idx in range(1, 5):
+        print(f"Choose equipment slot {slot_idx} (choose category) or enter 's' to skip slot:")
+        while True:
+            print("1. One stat\n2. Two stats\n3. Three stats\n")
+            slot_level = input("Enter 1/2/3 (or 's' to skip this slot):\n").strip()
+            if slot_level.lower() == 's':
+                slot_name = f"equipment {_num_to_word[slot_idx]}"
+                char_dict[char_name]['inventory'][slot_name] = None
+                print(f"Skipped {slot_name}.\n")
+                break
+            if slot_level not in ('1', '2', '3'):
+                print("Invalid choice; enter 1, 2, 3, or 's' to skip.")
+                continue
+            slot_key = 'One' if slot_level== '1' else ('Two' if slot_level == '2' else 'Three')
+            chosen = _choose_item_from(items['Equipment'][slot_key], "Choose equipment (number, 's' to search, 'c' to cancel, or exact name):\n")
+            if chosen is None:
+                skip = input("No selection made. Skip this equipment slot? (y/n)\n").strip().lower()
+                if skip == 'y':
+                    slot_name = f"equipment {_num_to_word[slot_idx]}"
+                    char_dict[char_name]['inventory'][slot_name] = None
+                    print(f"Skipped {slot_name}.\n")
+                    break
+                else:
+                    print("Retrying equipment selection.")
+                    continue
+            slot_name = f"equipment {_num_to_word[slot_idx]}"
+            char_dict[char_name]['inventory'][slot_name] = {'name': chosen, 'stats': items['Equipment'][slot_key][chosen]}
+            print(f"Selected: {_format_item_line(chosen, items['Equipment'][slot_key][chosen])}\n")
             break
-        else:
-            print("Invalid choice")
-    while x <= 4:
-        print("You get to choose four equipment")
-        eq_choice = input("Would you like to look at equipment with 1.one stat,\n2.two stats,\n3.three stats?\n")
-        if eq_choice.isdigit():
-            slot_name = f"equipment {x}"
-            if eq_choice == '1':
-                for item in items['Equipment']['One'].keys():
-                    print(item)
-                    print(items['Equipment']['One'][item])
-                choice  = input("Choose one of the listed items (Type exactly), or type 'Exit' if you want to go back to look at others")
-                if choice in items['Equipment']['One'].keys():
-                        char_dict[char_name]['inventory'][slot_name] = [choice]
-                        x += 1
-                elif choice == "Exit":
-                        continue
-                else:
-                        print("Invalid input")
-                        continue
-            elif eq_choice == '2':
-                for item in items['Equipment']['Two'].keys():
-                    print(item)
-                    print(items['Equipment']['Two'][item])
-                choice  = input("Choose one of the listed items (Type exactly), or type 'Exit' if you want to go back to look at others")
-                if choice in items['Equipment']['Two'].keys():
-                        char_dict[char_name]['inventory'][slot_name] = [choice]
-                        x += 1
-                elif choice == "Exit":
-                        continue
-                else:
-                        print("Invalid input")
-                        continue
-            elif eq_choice == '3':
-                for item in items['Equipment']['Three'].keys():
-                    print(item)
-                    print(items['Equipment']['Three'][item])
-                choice  = input("Choose one of the listed items (Type exactly), or type 'Exit' if you want to go back to look at others")
-                if choice in items['Equipment']['Three'].keys():
-                        char_dict[char_name]['inventory'][slot_name] = [choice]
-                        x += 1
-                elif choice == "Exit":
-                        continue
-                else:
-                        print("Invalid input")
-                        continue
-    print("Your inventory's been completed")
+
+    print("Your inventory has been completed.\n")
     return char_dict
+
+
+def edit_inven(char_dict, char_name, char_class):
+    # Normalize incoming class name to our item categories
+    if char_class in ("Black Mage", "White Mage"):
+        internal_class = 'Mage'
+    elif char_class == 'Thief':
+        internal_class = 'Thief'
+    else:
+        internal_class = 'Warrior'
+
+    while True:
+        choice = input('What slot would you like to edit?\n1. Weapon\n2. Armor\n3. Equipment\n4. Exit\n')
+        if choice == '1':
+            print("Choose a new weapon:")
+            weapon = _choose_item_from(items[internal_class]['Weapons'], "Choose a weapon (number, 's' to search, 'c' to cancel, or exact name):\n")
+            if weapon is None:
+                print("No changes made to weapon.")
+            else:
+                char_dict.setdefault(char_name, {}).setdefault('inventory', {})['weapon'] = {'name': weapon, 'stats': items[internal_class]['Weapons'][weapon]}
+                print(f"Weapon set to: {_format_item_line(weapon, items[internal_class]['Weapons'][weapon])}\n")
+            again = input("Would you like to change more? (y/n)\n").strip().lower()
+            if again == 'y':
+                continue
+            return char_dict
+        elif choice == '2':
+            print("Choose a new armor:")
+            armor = _choose_item_from(items[internal_class]['Armor'], "Choose armor (number, 's' to search, 'c' to cancel, or exact name):\n")
+            if armor is None:
+                print("No changes made to armor.")
+            else:
+                char_dict.setdefault(char_name, {}).setdefault('inventory', {})['armor'] = {'name': armor, 'stats': items[internal_class]['Armor'][armor]}
+                print(f"Armor set to: {_format_item_line(armor, items[internal_class]['Armor'][armor])}\n")
+            again = input("Would you like to change more? (y/n)\n").strip().lower()
+            if again == 'y':
+                continue
+            return char_dict
+        elif choice == '3':
+            while True:
+                slot = input("Which slot? One, Two, Three, Four\n").strip().lower().capitalize()
+                if slot not in ('One', 'Two', 'Three', 'Four'):
+                    print("Invalid slot name. Use One/Two/Three/Four.")
+                    continue
+                cat_choice = input("1 stat, 2 stats, or 3 stats? (or 's' to clear slot)\n").strip()
+                if cat_choice.lower() == 's':
+                    slot_key = f"equipment {slot.lower()}"
+                    char_dict.setdefault(char_name, {}).setdefault('inventory', {})[slot_key] = None
+                    print(f"{slot_key} cleared.")
+                    again = input("Would you like to change more? (y/n)\n").strip().lower()
+                    if again == 'y':
+                        break
+                    else:
+                        return char_dict
+                if cat_choice not in ('1', '2', '3'):
+                    print("Invalid choice; enter 1, 2 or 3.")
+                    continue
+                cat_key = 'One' if cat_choice == '1' else ('Two' if cat_choice == '2' else 'Three')
+                print(f"Choosing from category: {cat_key}")
+                chosen = _choose_item_from(items['Equipment'][cat_key], "Choose equipment (number, 's' to search, 'c' to cancel, or exact name):\n")
+                slot_key = f"equipment {slot.lower()}"
+                if chosen is None:
+                    cont = input("No selection made. Retry or clear this slot? (retry/clear)\n").strip().lower()
+                    if cont == 'clear':
+                        char_dict.setdefault(char_name, {}).setdefault('inventory', {})[slot_key] = None
+                        print(f"{slot_key} cleared.")
+                        again = input("Would you like to change more? (y/n)\n").strip().lower()
+                        if again == 'y':
+                            break
+                        else:
+                            return char_dict
+                    else:
+                        continue
+                # chosen valid
+                char_dict.setdefault(char_name, {}).setdefault('inventory', {})[slot_key] = {'name': chosen, 'stats': items['Equipment'][cat_key][chosen]}
+                print(f"{slot_key} set to: {_format_item_line(chosen, items['Equipment'][cat_key][chosen])}\n")
+                again = input("Would you like to change more? (y/n)\n").strip().lower()
+                if again == 'y':
+                    break
+                else:
+                    return char_dict
+        elif choice == '4':
+            return char_dict
+        else:
+            print("Not an option.")
+
         #It will search for keywords like warrior or mage in their class and mark variables as true where needed.
         #It will print all the valid items for them
         #It would start with weapons and the armor, and then finally do equipment. a variable would keep track of how many equipment they choose, so it will end when they get all 4.
@@ -341,107 +548,3 @@ def new_inven(char_class,char_dict,char_name):
         #It would finally return the character dictionary at the end.
         #When they choose an item, it will use that to search for the item, and if it exists, it will append it to the character dictionaray.
     #Make a fucntion for editing an already made character
-def edit_inven(char_dict,char_name,char_class):
-    # Normalize incoming class name to our item categories
-    if char_class in ("Black Mage", "White Mage"):
-        internal_class = 'Mage'
-    elif char_class == 'Thief':
-        internal_class = 'Thief'
-    else:
-        internal_class = 'Warrior'
-
-    while True:
-        choice = input('What slot would you like to edit?\n1.Weapon\n2.Armor\n3.Equipment\n4.Exit\n')
-        if choice == '1':
-            print("Type the weapon you want exactly")
-            while True:
-                for item in items[internal_class]['Weapons'].keys():
-                    print(item)
-                    print(items[internal_class]['Weapons'][item])
-                choice = input('Choose a weapon')
-                if choice in items[internal_class]['Weapons'].keys():
-                    char_dict.setdefault(char_name, {})
-                    char_dict[char_name].setdefault('inventory', {})
-                    char_dict[char_name]['inventory']['weapon'] = [choice]
-                    again = input("Would you like to change more? y/n\n")
-                    again = again.strip().lower()
-                    if again == 'y':
-                        break
-                    else:
-                        return char_dict
-                else:
-                    print("Invalid choice")
-        elif choice == '2':
-            print("Type the armor exactly")
-            for item in items[internal_class]['Armor'].keys():
-                print(item)
-                print(items[internal_class]["Armor"][item])
-            while True:
-                choice = input("Choose one\n")
-                if choice in items[internal_class]["Armor"].keys():
-                    char_dict[char_name].setdefault('inventory', {})
-                    char_dict[char_name]['inventory']['armor'] = [choice]
-                    again = input("Would you like to change more? y/n\n")
-                    again = again.strip().lower()
-                    if again == 'y':
-                        break
-                    else:
-                        return char_dict
-                else:
-                    print("Invalid choice")
-        elif choice == '3':
-            while True:
-                slot = input("Which slot? One, Two, Three, Four\n")
-                if slot in ('One', 'Two', 'Three', 'Four'):
-                    slot_key = slot.lower()
-                    y = input("1 stat, 2 stats, or 3 stats?\n")
-                    if y == '1':
-                        for item in items['Equipment']['One'].keys():
-                            print(item)
-                            print(items['Equipment']['One'][item])
-                        item_choice  = input("Choose one of the listed items (Type exactly), or type 'Exit' if you want to go back to look at others\n")
-                        if item_choice in items['Equipment']['One'].keys():
-                            # item choice is stored as a list to match other modules
-                            char_dict[char_name].setdefault('inventory', {})[f'equipment {slot_key}'] = [item_choice]
-                            again = input("Would you like to change more? y/n\n")
-                            again = again.strip().lower()
-                            if again == 'y':
-                                    break
-                            else:
-                                    return char_dict
-                        elif item_choice == "Exit":
-                            continue
-                        
-                    elif y == '2':
-                        for item in items['Equipment']['Two'].keys():
-                            print(item)
-                            print(items['Equipment']['Two'][item])
-                        item_choice  = input("Choose one of the listed items (Type exactly), or type 'Exit' if you want to go back to look at others\n")
-                        if item_choice in items['Equipment']['Two'].keys():
-                            char_dict[char_name].setdefault('inventory', {})[f'equipment {slot_key}'] = [item_choice]
-                        elif item_choice == "Exit":
-                                continue
-                    elif y == '3':
-                        for item in items['Equipment']['Three'].keys():
-                            print(item)
-                            print(items['Equipment']['Three'][item])
-                        item_choice  = input("Choose one of the listed items (Type exactly), or type 'Exit' if you want to go back to look at others\n")
-                        if item_choice in items['Equipment']['Three'].keys():
-                                char_dict[char_name].setdefault('inventory', {})[f'equipment {slot_key}'] = [item_choice]
-                                again = input("Would you like to change more? y/n\n")
-                                again = again.strip().lower()
-                                if again == 'y':
-                                    break
-                                else:
-                                    return char_dict
-                        elif item_choice == "Exit":
-                                continue
-
-        #It will ask if they want to remove an item, or add an item.
-            #If they choose either, it will check to see if they have either an item to remove, or an open slot to add to.
-            #If they do, they would both ask what item, either to remove, which it would print their items they have, or what they want to add, printing the right items, taking restrictions into account.
-            #When they choose a valid item, it would fill a dictionary with a empty place holder if they removed, and if they added it would insert the item into the correct slot.
-            #It would return back to the main chunk function of character editer, by Mirai.
-    #Function names
-    #new_inven()
-    #edit_inven()

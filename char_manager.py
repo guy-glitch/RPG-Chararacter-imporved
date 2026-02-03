@@ -1,8 +1,8 @@
 # MH 1st character management
 
 from skill_stat_manager import setup_char_value, get_stats_for_class
-from inventoryWUI import new_inven, edit_inven
-from character_search import char_search, char_display
+from inventoryWUI import new_inven, edit_inven, migrate_inventories, find_item_by_name
+from character_search import check_char, dict_display
 
 # dictionary to contain all characters
 characters = {
@@ -29,15 +29,22 @@ characters = {
         },
         "skills" : {"Cure", "Esuna"},
         "inventory" : {
-            "weapon" : ["Wand"],
-            "armor" : ["Robes"],
-            "equipment one" : ["Classic Italian Pizza"],
-            "equipment two" : ["Pot of Petunias"],
-            "equipment three" : ["Bowling Pin"],
-            "equipment four" : ["Sticky Hand"]
+            # structured format: {'name': <str>, 'stats': {..}} or None
+            "weapon" : find_item_by_name("Wand") or {"name": "Wand", "stats": {}},
+            "armor" : find_item_by_name("Robes") or {"name": "Robes", "stats": {}},
+            "equipment one" : {"name": "Classic Italian Pizza", "stats": {}},
+            "equipment two" : {"name": "Pot of Petunias", "stats": {}},
+            "equipment three" : {"name": "Bowling Pin", "stats": {}},
+            "equipment four" : {"name": "Sticky Hand", "stats": {}}
         }
     }
 }
+
+# ensure older character inventories migrate to new structured format on load
+try:
+    migrate_inventories(characters)
+except Exception as e:
+    print(f"Inventory migration failed: {e}")
 
 
 # tuple of races
@@ -55,8 +62,16 @@ def char_return(characters):
 
 # Create character function, takes in character dictionary, race tuple, class tuple:
 def create_character(character_dictionary, races, classes):
-    # ask character name
-    name = input("What is your characters name?\n")
+    # ask character name (non-empty & unique)
+    while True:
+        name = input("What is your character's name?\n").strip()
+        if not name:
+            print("Name cannot be empty.")
+            continue
+        if name in character_dictionary:
+            print("That name already exists. Choose another.")
+            continue
+        break
     # choose class
     while True:
         for idx, cls in enumerate(classes, start=1):
@@ -80,11 +95,14 @@ def create_character(character_dictionary, races, classes):
 
     # choose level
     while True:
-        level = input("What level is your character?\n")
+        level = input("What level is your character? (integer >= 1)\n").strip()
         if not level.isdigit():
             print("That is not an option.")
             continue
         level = int(level)
+        if level < 1:
+            print("Level must be at least 1.")
+            continue
         break
 
     # create character entry
@@ -98,8 +116,18 @@ def create_character(character_dictionary, races, classes):
     # start with empty skills set
     character_dictionary[name]["skills"] = set()
 
-    # set new character inventory with Wills new inventory function
+    # allow adding starting skills
+    print("\nEnter starting skills (one per line). Press Enter on an empty line to finish.")
+    while True:
+        skill = input('Skill name (or press Enter to finish):\n').strip()
+        if not skill:
+            break
+        character_dictionary[name].setdefault('skills', set()).add(skill)
+        print(f"Added skill: {skill}")
+
+    # set new character inventory with Wills new inventory function and display the character
     character_dictionary = new_inven(class_choice, character_dictionary, name)
+    dict_display(name, character_dictionary)
     # returns updated character dictionary
     return character_dictionary
 
@@ -107,8 +135,8 @@ def create_character(character_dictionary, races, classes):
 def edit_character(character_dictionary):
     while True:
         # User chooses character to edit with Warrens search function
-        character = char_search(character_dictionary)
-        char_display(character, character_dictionary)
+        character = check_char(character_dictionary)
+        dict_display(character, character_dictionary)
         # ask what they want to edit (inventory, skills, attributes, name)
         to_edit = input("What do you want to edit?\n1. Inventory\n2. Skills\n3. Atributtes\n")
         if to_edit == "1":
