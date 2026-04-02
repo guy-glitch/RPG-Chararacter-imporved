@@ -1,7 +1,6 @@
 # MH 1st character management
 
 from skill_stat_manager import setup_char_value, get_stats_for_class
-from inventoryWUI import new_inven, edit_inven, migrate_inventories, find_item_by_name
 from character_search import check_char, dict_display
 
 # dictionary to contain all characters
@@ -28,23 +27,8 @@ characters = {
             "Evs" : 10
         },
         "skills" : {"Cure", "Esuna"},
-        "inventory" : {
-            # structured format: {'name': <str>, 'stats': {..}} or None
-            "weapon" : find_item_by_name("Wand") or {"name": "Wand", "stats": {}},
-            "armor" : find_item_by_name("Robes") or {"name": "Robes", "stats": {}},
-            "equipment one" : {"name": "Classic Italian Pizza", "stats": {}},
-            "equipment two" : {"name": "Pot of Petunias", "stats": {}},
-            "equipment three" : {"name": "Bowling Pin", "stats": {}},
-            "equipment four" : {"name": "Sticky Hand", "stats": {}}
-        }
     }
 }
-
-# ensure older character inventories migrate to new structured format on load
-try:
-    migrate_inventories(characters)
-except Exception as e:
-    print(f"Inventory migration failed: {e}")
 
 
 # tuple of races
@@ -59,6 +43,22 @@ class_options = ("Black Mage", "Warrior", "Thief", "White Mage")
 def char_return(characters):
     # returns character dictionary for easy access
     return characters
+
+def random_char_save(character_dictionary, name, class_choice,race_choice,level,skill1,skill2,skill3,skill4):
+    # create character entry
+    character_dictionary[name] = {}
+    character_dictionary[name]["class"] = class_choice
+    character_dictionary[name]["race"] = race_choice
+    character_dictionary[name]["level"] = level
+
+    # set base atributtes using skill_stat_manager helper
+    character_dictionary[name]["atributtes"] = get_stats_for_class(class_choice, level)
+    # start with empty skills set
+    character_dictionary[name]["skills"] = set()
+    character_dictionary[name].setdefault('skills', set()).add(skill1)
+    character_dictionary[name].setdefault('skills', set()).add(skill2)
+    character_dictionary[name].setdefault('skills', set()).add(skill3)
+    character_dictionary[name].setdefault('skills', set()).add(skill4)
 
 # Create character function, takes in character dictionary, race tuple, class tuple:
 def create_character(character_dictionary, races, classes):
@@ -126,7 +126,7 @@ def create_character(character_dictionary, races, classes):
         print(f"Added skill: {skill}")
 
     # set new character inventory with Wills new inventory function and display the character
-    character_dictionary = new_inven(class_choice, character_dictionary, name)
+
     dict_display(name, character_dictionary)
     # returns updated character dictionary
     return character_dictionary
@@ -138,11 +138,8 @@ def edit_character(character_dictionary):
         character = check_char(character_dictionary)
         dict_display(character, character_dictionary)
         # ask what they want to edit (inventory, skills, attributes, name)
-        to_edit = input("What do you want to edit?\n1. Inventory\n2. Skills\n3. Atributtes\n")
+        to_edit = input("What do you want to edit?\n1. Skills\n2. Atributtes\n")
         if to_edit == "1":
-            # edit inventory for that character
-            character_dictionary = edit_inven(character_dictionary, character, character_dictionary[character]["class"])
-        elif to_edit == "2":
             # simple skills add/remove handler
             action = input("Add or remove skill? (add/remove)\n").strip().lower()
             if action == 'add':
@@ -151,7 +148,7 @@ def edit_character(character_dictionary):
             elif action == 'remove':
                 rem = input("Skill name to remove?\n")
                 character_dictionary[character].setdefault('skills', set()).discard(rem)
-        elif to_edit == "3":
+        elif to_edit == "2":
             # edit attributes for that character
             character_dictionary = setup_char_value(character_dictionary, target_name=character)
         else:

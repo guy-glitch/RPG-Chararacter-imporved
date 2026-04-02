@@ -2,6 +2,7 @@
 #Import other files for functions
 from char_manager import create_character, edit_character
 from character_search import char_search
+from saving import *
 
 # tuple of races
     # tuple that contians all available races
@@ -52,18 +53,22 @@ def main():
     characters_local = characters
     print("Welcome to the RPG Character Manager. You can create, edit, and search for characters here.")
     while True:
-        choice = input("What would you like to do?\n1.Create a new character\n2.Edit an already made character\n3.Search through characters\n4.Exit\n")
-        if choice == '1':
-            characters_local = create_character(characters_local, race_options, class_options)
-        elif choice == '2':
-            characters_local = edit_character(characters_local)
-        elif choice == '3':  
-            char_search(characters_local)
-        elif choice == '4':
-            print("Goodbye")
-            sys.exit()
-        else:
-            print("Invalid choice, try again")
+        choice = input("What would you like to do?\n1.Create a new character\n2.Edit an already made character\n3.Search through characters\n4.Exit\n5 save\n6 load previous characters\n7 make random character")
+        match choice:
+            case'1':
+                characters_local = create_character(characters_local, race_options, class_options)
+            case'2':
+                characters_local = edit_character(characters_local)
+            case'3':  
+                char_search(characters_local)
+            case'4':
+                print("Goodbye")
+                sys.exit()
+            case '5':
+                new_char = random_char
+                random_char_save(characters,new_char.name,new_char.clss,new_char.species,new_char.level,new_char.skill1,new_char.skill2,new_char.skill3,new_char.skill4)
+            case _:
+                print("Invalid choice, try again")
 
 #define a function to return characters
 def char_return(characters):
