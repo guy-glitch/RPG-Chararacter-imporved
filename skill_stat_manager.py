@@ -1,4 +1,4 @@
-#BB 1st RPG Character Manager Project
+#WG_CP2 RPG Character Manager Project
 # char_return will be imported inside setup_char_value to avoid circular import
 
 # Characters starting stats are in nested dictionary and available module-wide
@@ -116,13 +116,13 @@ def get_stats_for_class(clas, level=1):
 
 
 def make_stat_modifier(bonuses):
-    """Closure factory that returns a function applying `bonuses` to a stats dict.
+    #Closure factory that returns a function applying `bonuses` to a stats dict.
 
-    The returned function takes a stats dict and returns a new dict where each stat
-    in `bonuses` is added to the corresponding value (missing stats are treated as 0).
-    The bonuses are captured (copied) when the closure is created so later changes to
-    the original `bonuses` object do not affect the modifier.
-    """
+    #The returned function takes a stats dict and returns a new dict where each stat
+    #in `bonuses` is added to the corresponding value (missing stats are treated as 0).
+    #The bonuses are captured (copied) when the closure is created so later changes to
+    #the original `bonuses` object do not affect the modifier.
+
     # copy to freeze captured values
     captured = dict(bonuses)
 
