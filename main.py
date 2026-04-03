@@ -3,6 +3,7 @@
 from char_manager import create_character, edit_character
 from character_search import char_search
 from saving import *
+from show_ability_score import *
 
 # tuple of races
     # tuple that contians all available races
@@ -44,7 +45,7 @@ def main():
     characters_local = characters
     print("Welcome to the RPG Character Manager. You can create, edit, and search for characters here.")
     while True:
-        choice = input("What would you like to do?\n1.Create a new character\n2.Edit an already made character\n3.Search through characters\n4 save\n5 load previous characters\n6 make random character\n7 Exit\n")
+        choice = input("What would you like to do?\n1.Create a new character\n2.Edit an already made character\n3.Search through characters\n4 save\n5 load previous characters\n6 make random character\n7 Check statistical analysis\n8 Exit\n")
         match choice:
             case'1':
                 characters_local = create_character(characters_local, race_options, class_options)
@@ -59,7 +60,10 @@ def main():
                 print()
             case '6':
                 print()
-            case'7':
+            case '7':
+                new_format_characters = save_as_list(characters)
+                get_input(new_format_characters)
+            case'8':
                 print("Goodbye")
                 exit()
             case _:

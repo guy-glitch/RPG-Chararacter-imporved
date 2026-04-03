@@ -1,5 +1,5 @@
 # MH 1st character management
-
+import pandas
 from skill_stat_manager import setup_char_value, get_stats_for_class
 from character_search import check_char, dict_display
 
@@ -59,6 +59,12 @@ def random_char_save(character_dictionary, name, class_choice,race_choice,level,
     character_dictionary[name].setdefault('skills', set()).add(skill2)
     character_dictionary[name].setdefault('skills', set()).add(skill3)
     character_dictionary[name].setdefault('skills', set()).add(skill4)
+
+def save_as_list(char):
+    new_char = {}
+    for i in char.keys():
+        new_char|={i:[char[i]["race"],char[i]["class"],char[i]["level"],char[i]["atributtes"]["MP"],char[i]["atributtes"]["HP"],char[i]["atributtes"]["Str"],char[i]["atributtes"]["Atk"],char[i]["atributtes"]["Def"],char[i]["atributtes"]["Mag"],char[i]["atributtes"]["Spr"],char[i]["atributtes"]["Acc"],char[i]["atributtes"]["Spd"],char[i]["atributtes"]["Evs"]]}
+    return pandas.DataFrame(new_char)
 
 # Create character function, takes in character dictionary, race tuple, class tuple:
 def create_character(character_dictionary, races, classes):
