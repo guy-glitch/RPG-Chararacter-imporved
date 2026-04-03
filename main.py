@@ -36,24 +36,15 @@ characters = {
             "Evs" : 10
         },
         "skills" : {"Cure", "Esuna"},
-        "inventory" : {
-            "weapon" : ["Wand"],
-            "armor" : ["Robes"],
-            "equipment one" : ["Classic Italian Pizza"],
-            "equipment two" : ["Pot of Petunias"],
-            "equipment three" : ["Bowling Pin"],
-            "equipment four" : ["Sticky Hand"]
-        }
     }
 }
 
-import sys
 #Define main
 def main():
     characters_local = characters
     print("Welcome to the RPG Character Manager. You can create, edit, and search for characters here.")
     while True:
-        choice = input("What would you like to do?\n1.Create a new character\n2.Edit an already made character\n3.Search through characters\n4.Exit\n5 save\n6 load previous characters\n7 make random character")
+        choice = input("What would you like to do?\n1.Create a new character\n2.Edit an already made character\n3.Search through characters\n4 save\n5 load previous characters\n6 make random character\n7 Exit\n")
         match choice:
             case'1':
                 characters_local = create_character(characters_local, race_options, class_options)
@@ -61,12 +52,16 @@ def main():
                 characters_local = edit_character(characters_local)
             case'3':  
                 char_search(characters_local)
-            case'4':
-                print("Goodbye")
-                sys.exit()
-            case '5':
+            case '4':
                 new_char = random_char
                 random_char_save(characters,new_char.name,new_char.clss,new_char.species,new_char.level,new_char.skill1,new_char.skill2,new_char.skill3,new_char.skill4)
+            case '5':
+                print()
+            case '6':
+                print()
+            case'7':
+                print("Goodbye")
+                exit()
             case _:
                 print("Invalid choice, try again")
 
