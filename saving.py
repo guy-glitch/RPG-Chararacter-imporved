@@ -3,6 +3,8 @@ from faker import Faker as f
 from faker.providers import DynamicProvider as dp
 import random as r
 from char_manager import *
+import matplotlib as plt, numpy
+from character_search import 
 f  = f()
 #A faker dynamic provider that gets a class
 class_provider = dp(provider_name="class_provider", elements=["Black Mage", "Warrior", "Thief", "White Mage"])
@@ -26,11 +28,29 @@ class char():
         self.attributes = attributes
         self.skills = skills
 
-#CLass data visulization
+def graphs(characters):
 
 
-#Class statistical anilyzer
-
+#class DataVisualization
+class DataVisualization:
+    #initiate: character, optional second character
+    def __init__(self, character, optional = None):
+        #character is a dictionary of all the character's info
+        self.character = character
+        #optional is an optional second character for comparing
+        self.char_two = optional
+    #display
+    def display(self):
+        #set up the graph
+        #set the catigories to the attributes
+        categories = ['MP', 'HP', 'Str', 'Atk', 'Def', 'Mag', 'Spr', 'Acc', 'Spd', 'Evs']
+        #get the info for the character and input it as the values for the catigories
+        values = [self.character.get("MP"),self.character.get("HP"), self.character.get("Str"),self.character.get("Atk"),self.character.get("Def"),self.character.get("Mag"),self.character.get("Spr"),self.character.get("Acc"),self.character.get("Spd"),self.character.get("Evs")]
+        #display the graph
+        plt.bar(categories, values)
+        plt.ylabel("Level")
+        plt.title("Attribute Levels")
+        plt.show()
 
 #Class random generator
 class random_char():
