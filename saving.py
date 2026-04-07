@@ -4,7 +4,6 @@ from faker.providers import DynamicProvider as dp
 import random as r
 from char_manager import *
 import matplotlib as plt, numpy
-from character_search import 
 f  = f()
 #A faker dynamic provider that gets a class
 class_provider = dp(provider_name="class_provider", elements=["Black Mage", "Warrior", "Thief", "White Mage"])
@@ -28,7 +27,6 @@ class char():
         self.attributes = attributes
         self.skills = skills
 
-def graphs(characters):
 
 
 #class DataVisualization

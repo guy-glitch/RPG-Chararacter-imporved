@@ -64,7 +64,7 @@ def main():
                 new_format_characters = save_as_list(characters)
                 get_input(new_format_characters)
             case '8':
-                char = char_get()
+                char =  char_get()
             case'9':
                 print("Goodbye")
                 exit()
