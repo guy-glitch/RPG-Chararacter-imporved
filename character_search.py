@@ -70,14 +70,13 @@ def char_search(characters):
 def char_get(characters):
     #call check_char with characters argunment, & search value
     check = check_char(characters)
-    dict_display(check, characters)
-    character = input("Please input the exact name of your character in a way that matches the characters name perfectly")
     try:
-        characters[character]
-        return character
+        return characters[check]
     except:
         print("You inputted the name incorrectly try again")
         char_get(characters)
+
+
 #character display function
 def _format_item_display(item):
     # item can be dict with 'name' and 'stats', a string, or other dict/list

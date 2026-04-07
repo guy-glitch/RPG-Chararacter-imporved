@@ -3,7 +3,7 @@ from faker import Faker as f
 from faker.providers import DynamicProvider as dp
 import random as r
 from char_manager import *
-import matplotlib as plt, numpy
+import matplotlib.pyplot as plt, numpy
 f  = f()
 #A faker dynamic provider that gets a class
 class_provider = dp(provider_name="class_provider", elements=["Black Mage", "Warrior", "Thief", "White Mage"])

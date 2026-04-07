@@ -1,6 +1,6 @@
 # Project name
 ***
-![Image of code while running](location of image in folders)
+![Image of code while running](image.png)
 paragraph project description
 
 ## How to use

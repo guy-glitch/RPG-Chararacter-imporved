@@ -1,7 +1,7 @@
 #WG_CP2 1st
 #Import other files for functions
 from char_manager import create_character, edit_character
-from character_search import char_search
+from character_search import *
 from saving import *
 from show_ability_score import *
 
@@ -64,7 +64,9 @@ def main():
                 new_format_characters = save_as_list(characters)
                 get_input(new_format_characters)
             case '8':
-                char =  char_get()
+                char =  char_get(characters)
+                graph = DataVisualization(char)
+                graph.display()
             case'9':
                 print("Goodbye")
                 exit()
